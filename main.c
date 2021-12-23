@@ -153,6 +153,21 @@ int main(int argc, char* argv[]){
     int renderMode = 0;
     int editMode = 0;
     Texture2D img = LoadTexture(levelImagePath);
+    Texture2D lever[6];
+    for(int i = 0; i < 6; i++){
+        lever[i] = LoadTexture(TextFormat("objects/lever%d/0.png", i));
+    }
+    Texture2D door[6];
+    for(int i = 0; i < 6; i++){
+        door[i] = LoadTexture(TextFormat("objects/door%d/0.png", i));
+    }
+    Texture2D portal[2];
+    for(int i = 0; i < 2; i++){
+        portal[i] = LoadTexture(TextFormat("objects/portal%d/0.png", i));
+    }
+    Texture2D player = LoadTexture("objects/player.png");
+    Texture2D player2 = LoadTexture("objects/player2.png");
+    Texture2D crateimg = LoadTexture("objects/crate.png");
 
     while(!WindowShouldClose()){
         if(IsKeyPressed(KEY_R)){
@@ -275,7 +290,8 @@ int main(int argc, char* argv[]){
                 }else{
                     ClearBackground(RAYWHITE);
                     for(int i = 0; i < colliderNum + portalNum + leverNum + doorNum; i++){
-                        DrawRectangleC(colRects[i], rectSelect == i ? GREEN : BLUE);
+                        DrawRectangleC(colRects[i], rectSelect == i ? GREEN : (Col[i].trigger != 0 ? BROWN : PURPLE));
+                        DrawRectangleLinesEx(correctRect(colRects[i]), 1, rectSelect == i ? LIME : (Col[i].trigger != 0 ? DARKBROWN : VIOLET));
                     }
                     if(renderMode == 2){
                         for(int i = 0; i < ladderNum; i++){
@@ -288,10 +304,30 @@ int main(int argc, char* argv[]){
                         for(int i = 0; i < textNum; i++){
                             DrawText(levelText[i].text, levelText[i].x, levelText[i].y, levelText[i].size, levelText[i].colour);
                         }
+                        DrawTexture(img, 0, 0, LIGHTGHOST);
+                        DrawTextureV(player, startingPos, LIGHTGHOST);
+                        DrawTextureV(player2, startingPos2, LIGHTGHOST);
+                        for(int i = colliderNum; i < colliderNum + leverNum; i++){
+                            DrawTexture(lever[(Col[i].trigger - 1) % 6], Col[i].x, Col[i].y, LIGHTGHOST);
+                        }
+                        for(int i = colliderNum + leverNum; i < colliderNum + leverNum + doorNum; i++){
+                            DrawTexture(door[(Col[i].tag - 1) % 6], Col[i].x, Col[i].y, LIGHTGHOST);
+                        }
+                        for(int i = colliderNum + leverNum + doorNum; i < colliderNum + leverNum + doorNum + portalNum; i++){
+                            DrawTexture(portal[(Col[i].trigger - 1) % 6], Col[i].x, Col[i].y, LIGHTGHOST);
+                        }
+                        for(int i = 0; i < crateNum; i++){
+                            DrawTextureV(crateimg, crate[i].position, LIGHTGHOST);
+                        }
                     }
-                    DrawTexture(img, 0, 0, LIGHTGHOST);
                     
                 }
+                DrawRectangleRec((Rectangle){
+                    (int)((GetMouseX() - camera.offset.x) / camera.zoom + camera.target.x),
+                    (int)((GetMouseY() - camera.offset.y) / camera.zoom + camera.target.y),
+                    1,1
+                }, YELLOW);
+            
             EndMode2D();
             DrawText(TextFormat("tx: %f", camera.target.x), 10,10,20,BLUE);
             DrawText(TextFormat("ty: %f", camera.target.y), 10,40,20,BLUE);
