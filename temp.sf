@@ -1,0 +1,44 @@
+/ Colliders
+    %(135,76,-186,-183,0,1,0)
+    %(0,119,240,16,0,1,0)
+    %(0,95,16,24,0,1,0)
+    %(32,104,32,15,0,1,0)
+    %(96,104,32,15,0,1,0)
+    %(112,89,16,15,0,1,0)
+    %(160,104,48,15,0,1,0)
+    %(176,89,32,15,0,1,0)
+    %(192,74,16,15,0,1,0)
+    %(224,104,16,15,0,1,0)
+    %(224,55,16,28,0,1,0)
+
+
+/ Disappearing walls
+    ~wallNum=0
+
+
+/ Levers
+    ~leverNum=0
+
+/ Doors
+    ~doorNum=0
+
+/ Portals
+    ~portalNum=0
+
+/ Ladders
+
+
+/ Crates
+
+
+/ TextBoxes
+    &(26,22,11,Use WASD or Arrow Keys to move,?(255,255,255,255))
+
+
+/ Properties
+    ~goal=%(241,0,100,135,0,1,0)
+    ~sp=@(4,68)
+    ~sp2=@(8,70)
+    ~scrollType=0
+    ~isMultiplayer=0
+    ~leverFlip=
