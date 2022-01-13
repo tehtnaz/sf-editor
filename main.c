@@ -168,19 +168,19 @@ int main(int argc, char* argv[]){
     Texture2D img = LoadTexture(levelImagePath);
     Texture2D lever[6];
     for(int i = 0; i < 6; i++){
-        lever[i] = LoadTexture(TextFormat("objects/lever%d/0.png", i));
+        lever[i] = LoadTexture(TextFormat("resources/objects/lever%d/0.png", i));
     }
     Texture2D door[6];
     for(int i = 0; i < 6; i++){
-        door[i] = LoadTexture(TextFormat("objects/door%d/0.png", i));
+        door[i] = LoadTexture(TextFormat("resources/objects/door%d/0.png", i));
     }
     Texture2D portal[2];
     for(int i = 0; i < 2; i++){
-        portal[i] = LoadTexture(TextFormat("objects/portal%d/0.png", i));
+        portal[i] = LoadTexture(TextFormat("resources/objects/portal%d/0.png", i));
     }
-    Texture2D player = LoadTexture("objects/player.png");
-    Texture2D player2 = LoadTexture("objects/player2.png");
-    Texture2D crateimg = LoadTexture("objects/crate.png");
+    Texture2D player = LoadTexture("resources/objects/player.png");
+    Texture2D player2 = LoadTexture("resources/objects/player2.png");
+    Texture2D crateimg = LoadTexture("resources/objects/crate.png");
 
     while(!WindowShouldClose()){
         if(IsKeyPressed(KEY_R)){
