@@ -1668,6 +1668,7 @@ int writeFileSF(char path[128],
         if(((leverFlip >> i) & 0b1) == 1) fputc('1', fp);
         else fputc('0', fp);
     }
+    fprintf(fp, "\n    ~img=%s",levelImagePath);
 
     fclose(fp);
     //texts, textNum, leverFlip, levelimg ,bgpath

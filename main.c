@@ -4,6 +4,7 @@
 #include "recpp.h"
 #include "boxPP.h"
 #include "vector2pp.h"
+#include <stdlib.h>
 
 #define GHOST (Color){130, 130, 130, 130}
 #define LIGHTGHOST (Color){255, 255, 255, 130}
@@ -150,8 +151,20 @@ int main(int argc, char* argv[]){
         cratePos[i] = crate[i].position;
     }
     int rectSelect = 0;
+
+    // 0 = Colliders only (Level text, BoxCollider2D mode - no editing)
+    // 1 = Level Colliders only (Rectangle mode - editing allowed)
+    // 2 = All rendered (Level background, text, door/portal/lever/crate imgs, Rectangle mode - editing allowed)
     int renderMode = 0;
-    int editMode = 0;
+
+    // 1 = Level Collider edit mode
+    // 2 = Trigger edit mode
+    // 3 = Tag edit mode
+    // 4 = Crate edit mode
+    // 5 = player spawn edit mode
+    // 6 = text box edit mode
+    // 7 = property edit mode
+    int editMode = 1;
     Texture2D img = LoadTexture(levelImagePath);
     Texture2D lever[6];
     for(int i = 0; i < 6; i++){
@@ -171,32 +184,229 @@ int main(int argc, char* argv[]){
 
     while(!WindowShouldClose()){
         if(IsKeyPressed(KEY_R)){
-            readFileSF("temp.sf", levelImagePath, backgroundPath, &startingPos, &startingPos2, Col, ladderCol, levelText, crate, &textNum, &colliderNum, &ladderNum, &crateNum, &leverNum, &doorNum, &isMultiplayer, &portalNum, wallTags, &wallNum, &wallEnabled, &goal, &scrollType, &leverFlip);
-            UnloadTexture(img);
-            img = LoadTexture(levelImagePath);
-            for(int i = 0; i < colliderNum + portalNum + leverNum + doorNum; i++){
-                colRects[i] = boxToRec(Col[i]);
+            if(IsKeyDown(KEY_LEFT_SHIFT)){
+                printf("Auto Saving...\n");
+                for(int i = 0; i < colliderNum + portalNum + leverNum + doorNum; i++){
+                        Col[i] = rectToBox(Col[i], correctRect(colRects[i]));
+                }
+                writeFileSF("temp.sf", levelImagePath, backgroundPath, startingPos, startingPos2, Col, ladderCol, levelText, crate, textNum, colliderNum, ladderNum, crateNum, leverNum, doorNum, isMultiplayer, portalNum, wallTags, wallNum, wallEnabled, goal, scrollType, leverFlip);
+                printf("Saved!\n");
+                system(".\\sandwich.exe 1080 240 temp.sf");
+            }else{
+                readFileSF("temp.sf", levelImagePath, backgroundPath, &startingPos, &startingPos2, Col, ladderCol, levelText, crate, &textNum, &colliderNum, &ladderNum, &crateNum, &leverNum, &doorNum, &isMultiplayer, &portalNum, wallTags, &wallNum, &wallEnabled, &goal, &scrollType, &leverFlip);
+                UnloadTexture(img);
+                img = LoadTexture(levelImagePath);
+                for(int i = 0; i < colliderNum + portalNum + leverNum + doorNum; i++){
+                    colRects[i] = boxToRec(Col[i]);
+                }
+                for(int i = 0; i < ladderNum; i++){
+                    ladderRects[i] = boxToRec(ladderCol[i]);
+                }
+                for(int i = 0; i < crateNum; i++){
+                    cratePos[i] = crate[i].position;
+                }
+                rectSelect = 0;
+                renderMode = 0;
+                editMode = 0;
             }
-            for(int i = 0; i < ladderNum; i++){
-                ladderRects[i] = boxToRec(ladderCol[i]);
+        }
+        if(IsKeyPressed(KEY_EQUAL) && renderMode != 0){
+            switch(editMode){
+                case 1:
+                //key P = portal
+                //key L = lever
+                //key D = door
+                    rectSelect = colliderNum;
+                    for(int i = colliderNum + doorNum + leverNum + portalNum; i > colliderNum; i--){
+                        colRects[i] = colRects[i-1];
+                    }
+                    for(int i = colliderNum + doorNum + leverNum + portalNum; i > colliderNum; i--){
+                        Col[i] = Col[i-1];
+                    }
+                    Col[colliderNum].trigger = 0;
+                    Col[colliderNum].ladder = false;
+                    Col[colliderNum].enabled = true;
+                    Col[colliderNum].tag = 0;
+                    colRects[rectSelect] = (Rectangle){
+                        (int)((GetMouseX() - camera.offset.x) / camera.zoom + camera.target.x),
+                        (int)((GetMouseY() - camera.offset.y) / camera.zoom + camera.target.y),
+                        1,1
+                    };
+                    colliderNum++;
+                    break;
+                case 2:
+                    if(Col[rectSelect].trigger != 0) Col[rectSelect].trigger++;
+                    break;
+                case 3:
+                    Col[rectSelect].tag++;
+                    break;
+                case 4:
+                    //a
+                    break;
+                case 5:
+                    //a
+                    break;
+                case 6:
+                    //a
+                    break;
             }
-            for(int i = 0; i < crateNum; i++){
-                cratePos[i] = crate[i].position;
+        }
+        if(IsKeyPressed(KEY_MINUS) && renderMode != 0){
+            switch(editMode){
+                case 1:
+                    if(rectSelect < colliderNum){
+                        if(colliderNum > 0) colliderNum--;
+                        else{
+                            printf("Cannot remove collider, none remain\n");
+                            break;
+                        }
+                    }else if(rectSelect < colliderNum + leverNum){
+                        if(leverNum > 0) leverNum--;
+                        else{
+                            printf("Cannot remove lever collider, none remain\n");
+                            break;
+                        }
+                    }else if(rectSelect < colliderNum + leverNum + doorNum){
+                        if(doorNum > 0) doorNum--;
+                        else{
+                            printf("Cannot remove door collider, none remain\n");
+                            break;
+                        }
+                    }else if(rectSelect < colliderNum + leverNum + doorNum + portalNum){
+                        if(portalNum > 0) portalNum--;
+                        else{
+                            printf("Cannot remove door collider, none remain\n");
+                            break;
+                        }
+                    }
+                    for(int i = rectSelect; i < colliderNum + doorNum + leverNum + portalNum + 1; i++){
+                        colRects[i] = colRects[i+1];
+                    }
+                    for(int i = rectSelect; i < colliderNum + doorNum + leverNum + portalNum + 1; i++){
+                        Col[i] = Col[i+1];
+                    }
+                    
+                    break;
+                case 2:
+                    if(Col[rectSelect].trigger > 1){
+                        Col[rectSelect].trigger--;
+                        /*
+                        if(Col[rectSelect].trigger == 0){
+                            for(int i = 0; i < colliderNum; i++) {
+                                printf("0");
+                            }
+                            for(int i = 0; i < leverNum; i++) {
+                                printf("1");
+                            }
+                            for(int i = 0; i < doorNum; i++) {
+                                printf("2");
+                            }
+                            for(int i = 0; i < portalNum; i++) {
+                                printf("3");
+                            }
+                            printf("\n");
+                            if(rectSelect >= colliderNum + leverNum + doorNum){
+                                for(int i = 0; i < colliderNum + doorNum + leverNum + portalNum; i++) {
+                                    printf("%d", Col[i].trigger);
+                                }
+                                printf("\n");
+                                for(int i = colliderNum + doorNum + leverNum + portalNum; i > colliderNum; i--){
+                                    colRects[i] = colRects[i-1];
+                                }
+                                for(int i = colliderNum + doorNum + leverNum + portalNum; i > colliderNum; i--){
+                                    Col[i] = Col[i-1];
+                                }
+                                rectSelect++;
+                                colliderNum++;
+                                for(int i = 0; i < colliderNum + doorNum + leverNum + portalNum; i++) {
+                                    printf("%d", Col[i].tag);
+                                }
+                                printf("\n");
+                                doorNum--;
+                                for(int i = rectSelect; i < colliderNum + doorNum + leverNum + portalNum + 1; i++){
+                                    colRects[i] = colRects[i+1];
+                                }
+                                for(int i = rectSelect; i < colliderNum + doorNum + leverNum + portalNum + 1; i++){
+                                    Col[i] = Col[i+1];
+                                }
+                                portalNum--;
+                            }else{
+                                leverNum--;
+                            }
+                            colliderNum++;
+                            for(int i = 0; i < colliderNum; i++) {
+                                printf("0");
+                            }
+                            for(int i = 0; i < leverNum; i++) {
+                                printf("1");
+                            }
+                            for(int i = 0; i < doorNum; i++) {
+                                printf("2");
+                            }
+                            for(int i = 0; i < portalNum; i++) {
+                                printf("3");
+                            }
+                            printf("\n");
+                        }*/
+                    }
+                    break;
+                case 3:
+                    if(Col[rectSelect].tag > 0){
+                        Col[rectSelect].tag--;
+                        /*
+                        if(Col[rectSelect].tag == 0 && rectSelect >= colliderNum + leverNum && doorNum > 0){
+                            for(int i = 0; i < colliderNum + doorNum + leverNum + portalNum; i++) {
+                                printf("%d", Col[i].tag);
+                            }
+                            printf("\n");
+                            for(int i = colliderNum + doorNum + leverNum + portalNum; i > colliderNum; i--){
+                                colRects[i] = colRects[i-1];
+                            }
+                            for(int i = colliderNum + doorNum + leverNum + portalNum; i > colliderNum; i--){
+                                Col[i] = Col[i-1];
+                            }
+                            rectSelect++;
+                            colliderNum++;
+                            for(int i = 0; i < colliderNum + doorNum + leverNum + portalNum; i++) {
+                                printf("%d", Col[i].tag);
+                            }
+                            printf("\n");
+                            doorNum--;
+                            for(int i = rectSelect; i < colliderNum + doorNum + leverNum + portalNum + 1; i++){
+                                colRects[i] = colRects[i+1];
+                            }
+                            for(int i = rectSelect; i < colliderNum + doorNum + leverNum + portalNum + 1; i++){
+                                Col[i] = Col[i+1];
+                            }
+                            for(int i = 0; i < colliderNum + doorNum + leverNum + portalNum; i++) {
+                                printf("%d", Col[i].tag);
+                            }
+                            printf("\n");
+                            
+                        }*/
+                    }
+                    break;
+                case 4:
+                    //a
+                    break;
+                case 5:
+                    //a
+                    break;
+                case 6:
+                    //a
+                    break;
             }
-            rectSelect = 0;
-            renderMode = 0;
-            editMode = 0;
         }
         camera.zoom *= 1 + GetMouseWheelMove() * GetFrameTime() * zoomSpeed;
         //printf("%f\n", camera.zoom);
-        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) colRects[rectSelect] = (Rectangle){
+        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && editMode == 1) colRects[rectSelect] = (Rectangle){
             (int)((GetMouseX() - camera.offset.x) / camera.zoom + camera.target.x),
             (int)((GetMouseY() - camera.offset.y) / camera.zoom + camera.target.y),
             0,0
         };
 
 
-        if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
+        if(IsMouseButtonDown(MOUSE_BUTTON_LEFT) && editMode == 1){
             colRects[rectSelect].width = (int)((GetMouseX() - camera.offset.x) / camera.zoom + camera.target.x - colRects[rectSelect].x);
             colRects[rectSelect].height = (int)((GetMouseY() - camera.offset.y) / camera.zoom + camera.target.y - colRects[rectSelect].y);
         }
@@ -228,13 +438,14 @@ int main(int argc, char* argv[]){
         if(IsKeyPressed(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S)){
             printf("Saving...\n");
             for(int i = 0; i < colliderNum + portalNum + leverNum + doorNum; i++){
-                    Col[i] = rectToBox(Col[i], colRects[i]);
+                    Col[i] = rectToBox(Col[i], correctRect(colRects[i]));
             }
             writeFileSF("temp.sf", levelImagePath, backgroundPath, startingPos, startingPos2, Col, ladderCol, levelText, crate, textNum, colliderNum, ladderNum, crateNum, leverNum, doorNum, isMultiplayer, portalNum, wallTags, wallNum, wallEnabled, goal, scrollType, leverFlip);
             printf("Saved!\n");
         }
 
 
+        //Draw
         BeginDrawing();
             BeginMode2D(camera);
                 //if(IsKeyPressed(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S)) ClearBackground(LIGHTGRAY);
@@ -289,9 +500,20 @@ int main(int argc, char* argv[]){
                     }
                 }else{
                     ClearBackground(RAYWHITE);
+                    DrawRectangleRec((Rectangle){
+                        camera.target.x - camera.offset.x, camera.target.y - camera.offset.y, 
+                        -(camera.target.x - camera.offset.x),
+                        screenHeight
+                    },LIGHTGRAY);
+                    DrawRectangleRec((Rectangle){
+                        camera.target.x - camera.offset.x, camera.target.y - camera.offset.y, 
+                        screenWidth, 
+                        -(camera.target.y - camera.offset.y)
+                    },LIGHTGRAY);
+                    
                     for(int i = 0; i < colliderNum + portalNum + leverNum + doorNum; i++){
-                        DrawRectangleC(colRects[i], rectSelect == i ? GREEN : (Col[i].trigger != 0 ? BROWN : PURPLE));
-                        DrawRectangleLinesEx(correctRect(colRects[i]), 1, rectSelect == i ? LIME : (Col[i].trigger != 0 ? DARKBROWN : VIOLET));
+                        DrawRectangleC(colRects[i], rectSelect == i && editMode < 4 ? GREEN : (Col[i].trigger != 0 ? BROWN : PURPLE));
+                        DrawRectangleLinesEx(correctRect(colRects[i]), 1, rectSelect == i && editMode < 4 ? LIME : (Col[i].trigger != 0 ? DARKBROWN : VIOLET));
                     }
                     if(renderMode == 2){
                         for(int i = 0; i < ladderNum; i++){
@@ -320,6 +542,12 @@ int main(int argc, char* argv[]){
                             DrawTextureV(crateimg, crate[i].position, LIGHTGHOST);
                         }
                     }
+                    if(editMode == 2){
+                        DrawText(TextFormat("Trigger: %d", Col[rectSelect].trigger), colRects[rectSelect].x, colRects[rectSelect].y, 1, BLUE);
+                    }
+                    if(editMode == 3){
+                        DrawText(TextFormat("Tag: %d", Col[rectSelect].tag), colRects[rectSelect].x, colRects[rectSelect].y, 1, RED);
+                    }
                     
                 }
                 DrawRectangleRec((Rectangle){
@@ -339,8 +567,12 @@ int main(int argc, char* argv[]){
             DrawText(TextFormat("rh: %f", colRects[rectSelect].height), 10,160,20,BLUE);
             DrawText(TextFormat("select: %d", rectSelect), 10,190,20,BLUE);
             DrawText(TextFormat("edit mode: %d", editMode), 10,220,20,BLUE);
+            DrawText(TextFormat("colliderNum: %d", colliderNum), 10, 250, 20, BLUE);
+            DrawText(TextFormat("leverNum: %d", leverNum), 10, 280, 20, BLUE);
+            DrawText(TextFormat("doorNum: %d", doorNum), 10, 310, 20, BLUE);
+            DrawText(TextFormat("portalNum: %d", portalNum), 10, 340, 20, BLUE);
             if(IsKeyPressed(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S))
-                DrawText("Saved!", 10, 250, 40, BLACK);
+                DrawText("Saved!", 10, 370, 40, BLACK);
         EndDrawing();
     }
     CloseWindow();
